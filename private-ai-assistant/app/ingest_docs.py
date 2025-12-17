@@ -4,6 +4,8 @@ from pypdf import PdfReader
 from docx import Document
 from sentence_transformers import SentenceTransformer
 import chromadb
+import sys
+import uuid
 
 DATA_DIR = "/data/docs"
 DB_DIR = "/data/vectordb"
@@ -34,6 +36,14 @@ def chunk(text, size=500):
     for i in range(0, len(words), size):
         yield " ".join(words[i:i+size])
 
+if not os.path.isdir(DATA_DIR):
+    print(f"No docs directory: {DATA_DIR}")
+    sys.exit(0)
+
+# optional: clear
+# client.delete_collection("personal_knowledge")
+# collection = client.get_or_create_collection("personal_knowledge")
+
 for file in os.listdir(DATA_DIR):
     path = os.path.join(DATA_DIR, file)
     # text = read_file(path)
@@ -49,7 +59,7 @@ for file in os.listdir(DATA_DIR):
         collection.add(
             documents=[ch],
             embeddings=[embedding],
-            ids=[f"{file}_{i}"]
+            ids=[f"{file}_{i}_{uuid.uuid4().hex}"]
         )
 
 client.persist()

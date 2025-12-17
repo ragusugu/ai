@@ -7,3 +7,4 @@ chromadb
 pypdf
 python-docx
 tqdm
+torch==2.2.2

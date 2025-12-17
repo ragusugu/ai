@@ -50,6 +50,11 @@ Role: {memory.get("role")}
 Skills: {", ".join(memory.get("skills", []))}
 """
 
+    skills = memory.get("skills") or []
+    if isinstance(skills, str):
+        skills = [skills]
+    skills_str = ", ".join(skills)
+
     full_prompt = f"""
 {SYSTEM_PROMPT}
 
@@ -68,7 +73,8 @@ Assistant:
         "stream": False
     }
 
-    response = requests.post(OLLAMA_URL, json=payload, timeout=120)
-    response.raise_for_status()
-
-    return {"answer": response.json()["response"].strip()}
+    r = requests.post(OLLAMA_URL, json=payload, timeout=120)
+    r.raise_for_status()
+    j = r.json()
+    assistant_text = j.get("response") or j.get("output") or str(j)
+    return {"answer": assistant_text.strip()}
