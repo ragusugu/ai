@@ -1,0 +1,9 @@
+{
+  "name": "Suganeshwaran",
+  "role": "AI & Blockchain Engineer",
+  "skills": ["Python", "Docker", "Web3", "Airflow"],
+  "preferences": {
+    "response_style": "direct and technical",
+    "privacy_level": "high"
+  }
+}
