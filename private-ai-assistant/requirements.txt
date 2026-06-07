@@ -2,9 +2,11 @@ fastapi
 uvicorn
 requests
 pydantic
-sentence-transformers
+sentence-transformers==2.2.1
 chromadb
 pypdf
 python-docx
 tqdm
-torch==2.2.2
+numpy<2
+python-multipart
+langchain-text-splitters

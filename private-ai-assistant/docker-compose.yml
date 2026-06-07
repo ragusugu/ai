@@ -6,6 +6,13 @@ services:
       - "11434:11434"
     volumes:
       - ollama:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
   backend:
     image: python:3.11-slim
@@ -13,6 +20,7 @@ services:
     working_dir: /app
     volumes:
       - ./backend:/app
+      - ./ui:/app/ui
     command: >
       sh -c "pip install -r requirements.txt &&
              uvicorn app:app --host 0.0.0.0 --port 8000"
@@ -25,8 +33,9 @@ services:
     build: .
     container_name: ai-app
     working_dir: /app
+    environment:
+      - MODEL_NAME=gemma4:12b
     volumes:
-      - ./app:/app
       - ./data:/data
     ports:
       - "8001:8000"

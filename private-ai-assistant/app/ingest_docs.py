@@ -3,6 +3,7 @@ import json
 from pypdf import PdfReader
 from docx import Document
 from sentence_transformers import SentenceTransformer
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 import chromadb
 import sys
 import uuid
@@ -16,51 +17,68 @@ client = chromadb.Client(
 )
 collection = client.get_or_create_collection("personal_knowledge")
 
+ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt", ".json"}
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
 def read_file(path):
-    if path.endswith(".pdf"):
-        reader = PdfReader(path)
-        return "\n".join(p.page_content for p in reader.pages)
-    elif path.endswith(".docx"):
-        doc = Document(path)
-        return "\n".join(p.text for p in doc.paragraphs)
-    elif path.endswith(".json"):
-        with open(path) as f:
-            return json.dumps(json.load(f), indent=2)
-    elif path.endswith(".txt"):
-        with open(path) as f:
-            return f.read()
-    return ""
+    try:
+        if os.path.getsize(path) > MAX_FILE_SIZE:
+            print(f"Skipping {path}: file too large (>10MB)")
+            return ""
+        ext = os.path.splitext(path)[1].lower()
+        if ext not in ALLOWED_EXTENSIONS:
+            print(f"Skipping {path}: unsupported extension {ext}")
+            return ""
+        if path.endswith(".pdf"):
+            reader = PdfReader(path)
+            return "\n".join(p.extract_text() for p in reader.pages)
+        elif path.endswith(".docx"):
+            doc = Document(path)
+            return "\n".join(p.text for p in doc.paragraphs)
+        elif path.endswith(".json"):
+            with open(path) as f:
+                return json.dumps(json.load(f), indent=2)
+        elif path.endswith(".txt"):
+            with open(path) as f:
+                return f.read()
+        return ""
+    except Exception as e:
+        print(f"Error reading {path}: {e}")
+        return ""
 
-def chunk(text, size=500):
-    words = text.split()
-    for i in range(0, len(words), size):
-        yield " ".join(words[i:i+size])
+def get_chunks(text):
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=200,
+        length_function=len,
+        is_separator_regex=False,
+    )
+    return splitter.split_text(text)
 
-if not os.path.isdir(DATA_DIR):
-    print(f"No docs directory: {DATA_DIR}")
-    sys.exit(0)
+def run_ingestion():
+    if not os.path.isdir(DATA_DIR):
+        print(f"No docs directory: {DATA_DIR}")
+        return
 
-# optional: clear
-# client.delete_collection("personal_knowledge")
-# collection = client.get_or_create_collection("personal_knowledge")
+    for file in os.listdir(DATA_DIR):
+        path = os.path.join(DATA_DIR, file)
+        if not os.path.isfile(path):
+            continue
 
-for file in os.listdir(DATA_DIR):
-    path = os.path.join(DATA_DIR, file)
-    # text = read_file(path)
-    if not os.path.isfile(path):
-        continue
+        text = read_file(path)
+        if not text.strip():
+            continue
 
-    text = read_file(path)
-    if not text.strip():
-        continue
+        for i, ch in enumerate(get_chunks(text)):
+            embedding = model.encode(ch).tolist()
+            collection.add(
+                documents=[ch],
+                embeddings=[embedding],
+                ids=[f"{file}_{i}_{uuid.uuid4().hex}"]
+            )
 
-    for i, ch in enumerate(chunk(text)):
-        embedding = model.encode(ch).tolist()
-        collection.add(
-            documents=[ch],
-            embeddings=[embedding],
-            ids=[f"{file}_{i}_{uuid.uuid4().hex}"]
-        )
+    client.persist()
+    print("✅ Documents indexed successfully")
 
-client.persist()
-print("✅ Documents indexed successfully")
+if __name__ == "__main__":
+    run_ingestion()

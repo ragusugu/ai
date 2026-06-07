@@ -2,8 +2,4 @@ fastapi
 uvicorn
 requests
 pydantic
-sentence-transformers
-chromadb
-pypdf
-python-docx
-tqdm
+python-multipart
