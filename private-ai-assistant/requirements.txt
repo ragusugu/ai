@@ -2,7 +2,7 @@ fastapi
 uvicorn
 requests
 pydantic
-sentence-transformers==2.2.1
+sentence-transformers
 chromadb
 pypdf
 python-docx
