@@ -1,9 +1,30 @@
 {
-  "name": "Suganeshwaran",
-  "role": "AI & Blockchain Engineer",
-  "skills": ["Python", "Docker", "Web3", "Airflow"],
-  "preferences": {
-    "response_style": "direct and technical",
-    "privacy_level": "high"
-  }
+  "profile": {
+    "name": "Suganeshwaran",
+    "role": "AI & Blockchain Engineer",
+    "skills": [
+      "Python",
+      "Docker",
+      "Web3",
+      "Airflow"
+    ],
+    "preferences": {
+      "response_style": "direct and technical",
+      "privacy_level": "high"
+    }
+  },
+  "facts": [
+    {
+      "id": "initial-private-assistant-goal",
+      "text": "The assistant should run locally, maintain persistent memory, support document RAG, and require login before chat, uploads, or memory access.",
+      "tags": [
+        "project",
+        "memory",
+        "security"
+      ],
+      "created_at": "2026-06-08T00:00:00+00:00"
+    }
+  ],
+  "conversations": [],
+  "updated_at": "2026-06-08T00:00:00+00:00"
 }

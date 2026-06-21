@@ -5,16 +5,13 @@ from docx import Document
 from sentence_transformers import SentenceTransformer
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import chromadb
-import sys
 import uuid
 
 DATA_DIR = "/data/docs"
 DB_DIR = "/data/vectordb"
 
 model = SentenceTransformer("all-MiniLM-L6-v2")
-client = chromadb.Client(
-    chromadb.config.Settings(persist_directory=DB_DIR)
-)
+client = chromadb.PersistentClient(path=DB_DIR)
 collection = client.get_or_create_collection("personal_knowledge")
 
 ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt", ".json"}
@@ -31,7 +28,7 @@ def read_file(path):
             return ""
         if path.endswith(".pdf"):
             reader = PdfReader(path)
-            return "\n".join(p.extract_text() for p in reader.pages)
+            return "\n".join((page.extract_text() or "") for page in reader.pages)
         elif path.endswith(".docx"):
             doc = Document(path)
             return "\n".join(p.text for p in doc.paragraphs)
@@ -77,8 +74,9 @@ def run_ingestion():
                 ids=[f"{file}_{i}_{uuid.uuid4().hex}"]
             )
 
-    client.persist()
-    print("✅ Documents indexed successfully")
+    if hasattr(client, "persist"):
+        client.persist()
+    print("Documents indexed successfully")
 
 if __name__ == "__main__":
     run_ingestion()
